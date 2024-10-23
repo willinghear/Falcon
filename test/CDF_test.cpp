@@ -36,87 +36,87 @@ std::vector<double> read_data(const std::string &file_path)
     return data;
 }
 
-// //测试压缩和解压缩
-// void test_compression(const std::string& file_path) {
-//     // 读取数据
-//     std::vector<double> oriData = read_data(file_path);
-//     //std::cout<<" ordata : "<<oriData[0]<<std::endl;
-//     // 压缩相关变量
-//     std::vector<unsigned char> cmpData;
-//     std::vector<unsigned int> cmpOffset;
-//     std::vector<int> flag;
-//     size_t nbEle = oriData.size();
+//测试压缩和解压缩
+void test_compression(const std::string& file_path) {
+    // 读取数据
+    std::vector<double> oriData = read_data(file_path);
+    //std::cout<<" ordata : "<<oriData[0]<<std::endl;
+    // 压缩相关变量
+    std::vector<unsigned char> cmpData;
+    std::vector<unsigned int> cmpOffset;
+    std::vector<int> flag;
+    size_t nbEle = oriData.size();
 
-//     // 记录压缩时间
-//     std::cout<<"压缩开始\n";
-//     auto start_compress = std::chrono::high_resolution_clock::now();
-//     //进行压缩
-//     CDFCompressor CDFC;
-//     CDFC.compress(oriData,cmpData);
-//     auto end_compress = std::chrono::high_resolution_clock::now();
-//     std::chrono::duration<double> compress_duration = end_compress - start_compress;
-//     // 打印压缩时间
-//     std::cout << "压缩时间: " << compress_duration.count() << " 秒" << std::endl;
+    // 记录压缩时间
+    std::cout<<"压缩开始\n";
+    auto start_compress = std::chrono::high_resolution_clock::now();
+    //进行压缩
+    CDFCompressor CDFC;
+    CDFC.compress(oriData,cmpData);
+    auto end_compress = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> compress_duration = end_compress - start_compress;
+    // 打印压缩时间
+    std::cout << "压缩时间: " << compress_duration.count() << " 秒" << std::endl;
 
-//     std::cout << "压缩后的数据内容: ";
-//     for (const auto& byte : cmpData) {
-//         std::cout << std::hex << static_cast<int>(byte) << " "; // 打印为十六进制
-//     }
-//     std::cout << std::dec << std::endl; // 恢复为十进制格式
+    // std::cout << "压缩后的数据内容: ";
+    // for (const auto& byte : cmpData) {
+    //     std::cout << std::hex << static_cast<int>(byte) << " "; // 打印为十六进制
+    // }
+    // std::cout << std::dec << std::endl; // 恢复为十进制格式
 
-//     // std::cout << "压缩后的数据内容（以二进制格式）: ";
-//     // for (const auto& byte : cmpData) {
-//     //     std::cout << std::bitset<8>(byte) << " "; // 打印为二进制
-//     // }
-//     // std::cout << std::dec << std::endl; // 恢复为十进制格式
+    // std::cout << "压缩后的数据内容（以二进制格式）: ";
+    // for (const auto& byte : cmpData) {
+    //     std::cout << std::bitset<8>(byte) << " "; // 打印为二进制
+    // }
+    // std::cout << std::dec << std::endl; // 恢复为十进制格式
 
-//     // 解压缩相关变量
-//     std::vector<double> decompressedData;
-//     // int bit_rate = get_bit_num(*std::max_element(cmpOffset.begin(), cmpOffset.end()));
+    // 解压缩相关变量
+    std::vector<double> decompressedData;
+    // int bit_rate = get_bit_num(*std::max_element(cmpOffset.begin(), cmpOffset.end()));
 
-//     // 记录解压时间
-//     std::cout<<"解压开始\n";
-//     auto start_decompress = std::chrono::high_resolution_clock::now();
+    // 记录解压时间
+    std::cout<<"解压开始\n";
+    auto start_decompress = std::chrono::high_resolution_clock::now();
 
-//     //进行解压
-//     CDFDecompressor CDFD;
-//     CDFD.decompress(cmpData,decompressedData);
-//     auto end_decompress = std::chrono::high_resolution_clock::now();
-//     std::chrono::duration<double> decompress_duration = end_decompress - start_decompress;
+    //进行解压
+    CDFDecompressor CDFD;
+    CDFD.decompress(cmpData,decompressedData);
+    auto end_decompress = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> decompress_duration = end_decompress - start_decompress;
 
-//     // 打印解压时间
-//     std::cout << "解压时间: " << decompress_duration.count() << " 秒" << std::endl;
+    // 打印解压时间
+    std::cout << "解压时间: " << decompress_duration.count() << " 秒" << std::endl;
 
-//     // std::cout << "Decompressed Data: ";
-//     // for (const auto& val : decompressedData) {
-//     //     std::cout << val << " ";
-//     // }
-//     // std::cout << std::endl;
+    // std::cout << "Decompressed Data: ";
+    // for (const auto& val : decompressedData) {
+    //     std::cout << val << " ";
+    // }
+    // std::cout << std::endl;
 
-//     // 计算压缩率
-//     size_t original_size = oriData.size() * sizeof(double);
-//     size_t compressed_size = cmpData.size() * sizeof(unsigned char);
-//     double compression_ratio = static_cast<double>(original_size) / compressed_size;
+    // 计算压缩率
+    size_t original_size = oriData.size() * sizeof(double);
+    size_t compressed_size = cmpData.size() * sizeof(unsigned char);
+    double compression_ratio = static_cast<double>(original_size) / compressed_size;
 
-//     // 打印压缩率
-//     std::cout << "压缩率: " << compression_ratio << std::endl;
+    // 打印压缩率
+    std::cout << "压缩率: " << compression_ratio << std::endl;
 
-//     // 验证解压结果是否与原始数据一致
-//     ASSERT_EQ(decompressedData, oriData) << "解压失败，数据不一致。";
-// }
+    // 验证解压结果是否与原始数据一致
+    ASSERT_EQ(decompressedData, oriData) << "解压失败，数据不一致。";
+}
 
-// // Google Test 测试用例
-// TEST(CDFCompressorTest, CompressionDecompression) {
-//     std::string dir_path = "/mnt/e/start/gpu/CUDA/cuCompressor/test/data/float";//有毛病还没有数据集
-//     for (const auto& entry : fs::directory_iterator(dir_path)) {
-//         if (entry.is_regular_file()) {
-//             std::string file_path = entry.path().string();
-//             std::cout << "正在处理文件: " << file_path << std::endl;
-//             test_compression(file_path);
-//             std::cout << "---------------------------------------------" << std::endl;
-//         }
-//     }
-// }
+// Google Test 测试用例
+TEST(CDFCompressorTest, CompressionDecompression) {
+    std::string dir_path = "/mnt/e/start/gpu/CUDA/cuCompressor/test/data/float";//有毛病还没有数据集
+    for (const auto& entry : fs::directory_iterator(dir_path)) {
+        if (entry.is_regular_file()) {
+            std::string file_path = entry.path().string();
+            std::cout << "正在处理文件: " << file_path << std::endl;
+            test_compression(file_path);
+            std::cout << "---------------------------------------------" << std::endl;
+        }
+    }
+}
 
 std::vector<uint8_t> ConvertArrayToVector(const Array<uint8_t> &arr)
 {
@@ -129,7 +129,7 @@ TEST(comp, deComp)
     std::vector<unsigned char> cmpData;
     std::vector<unsigned int> cmpOffset;
     std::vector<int> flag;
-    std::vector<double> oriData = {1.0, 1.2, 1.3, 1.4, 1.5, 1.5, 1.5, 1.5 , 1.4};
+    std::vector<double> oriData = {1.0, 1.2, 1.3, 1.4, 1.5, 1.5, 1.5, 1.5 , 1.4 ,1.51 ,1.4};
     size_t nbEle = oriData.size();
 
     // 记录压缩时间

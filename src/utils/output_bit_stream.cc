@@ -40,11 +40,11 @@ uint32_t OutputBitStream::Write(uint64_t content, uint32_t len) {
         data_[cursor_++] = (buffer_ >> 32); // buffer高32位存入data_
         buffer_ <<= 32;                     // buffer左移
         bit_in_buffer_ -= 32;               // 更新长度
-        for(int i=0;i<cursor_;i++)
-        {
-            std::cout<<std::bitset<32>(data_[i])<<" ";
-        }
-        std::cout<<std::endl;
+        // for(int i=0;i<cursor_;i++)
+        // {
+        //     std::cout<<std::bitset<32>(data_[i])<<" ";
+        // }
+        // std::cout<<std::endl;
     }
     return len;
 }
@@ -101,11 +101,11 @@ void OutputBitStream::Flush() {
         data_[cursor_++] = buffer_ >> 32;
         buffer_ = 0;
         bit_in_buffer_ = 0;
-        for(int i=0;i<cursor_;i++)
-        {
-            std::cout<<data_[i]<<" ";
-        }
-        std::cout<<std::endl;
+        // for(int i=0;i<cursor_;i++)
+        // {
+        //     std::cout<<data_[i]<<" ";
+        // }
+        // std::cout<<std::endl;
     }
 }
 //@清空刷新

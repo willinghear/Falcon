@@ -22,10 +22,10 @@ void CDFCompressor::flushBits(std::vector<unsigned char> &output, OutputBitStrea
     size_t bufferSize = (totalBitsWritten+7)/8;//bitStream.GetBufferSize();
     output.resize(bufferSize);
     Array<uint8_t> buffer = bitStream.GetBuffer(bufferSize);
-    std::cout << "\n 压缩的流uint_t \n"; // 打印为二进制
+    //std::cout << "\n 压缩的流uint_t \n"; // 打印为二进制
     for (size_t i = 0; i < buffer.length(); ++i)
     {
-        std::cout << std::bitset<8>(buffer[i]) << " "; // 打印为二进制
+        //std::cout << std::bitset<8>(buffer[i]) << " "; // 打印为二进制
         output[i] = static_cast<unsigned char>(buffer[i]);
     }
 }
@@ -101,8 +101,8 @@ void CDFCompressor::compressBlock(const std::vector<long> &block, OutputBitStrea
         if(delta!=0)
         {
             std::bitset<64> binary(delta);  // 假设最多支持64位的二进制显示
-            std::cout << "压缩元素：" << delta 
-                      << " 压缩后：" << binary.to_string().substr(64-bitWight) << std::endl;
+            //std::cout << "压缩元素：" << delta 
+            //          << " 压缩后：" << binary.to_string().substr(64-bitWight) << std::endl;
 
         }
         totalBitsWritten += bitWight;

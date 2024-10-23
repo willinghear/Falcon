@@ -95,7 +95,7 @@ void CDFDecompressor::decompressBlock(InputBitStream &bitStream, std::vector<lon
         }
         long encodedDelta = bitStream.ReadLong(bitWight);
         long delta = zigzag_decode(encodedDelta);
-        std::cout<<delta<<" ";
+        //std::cout<<delta<<" ";//打印delta数据
         integers.push_back(integers[i - 1] + delta);
 
         totalBitsRead += bitWight;
@@ -103,7 +103,7 @@ void CDFDecompressor::decompressBlock(InputBitStream &bitStream, std::vector<lon
         // 检查是否有足够的位可以读取
         if ((bitStream.data_.size() - bitStream.cursor_) * 8 + bitStream.bits_in_buffer_ < bitWight)
         {
-            std::cout<< (bitStream.data_.size() - bitStream.cursor_) * 8 + bitStream.bits_in_buffer_ << " < " << bitWight <<std::endl;
+            std::cout<<"\n"<< (bitStream.data_.size() - bitStream.cursor_) * 8 + bitStream.bits_in_buffer_ << " < " << bitWight <<std::endl;
             //throw std::runtime_error("Not enough bits to read.");
             bitStream.bits_in_buffer_ = 0;
             return;
@@ -168,7 +168,7 @@ void CDFDecompressor::decompress(const std::vector<unsigned char> &input, std::v
         for (long intValue : integers)
         {
             double value = static_cast<double>(intValue) / po;
-            std::cout << " " << value; 
+            //std::cout << " " << value; 
             output.push_back(value);
         }
         std::cout << "\n size :" << integers.size()<<std::endl;   
