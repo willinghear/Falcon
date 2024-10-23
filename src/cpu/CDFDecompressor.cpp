@@ -95,6 +95,7 @@ void CDFDecompressor::decompressBlock(InputBitStream &bitStream, std::vector<lon
         }
         long encodedDelta = bitStream.ReadLong(bitWight);
         long delta = zigzag_decode(encodedDelta);
+        std::cout<<delta<<" ";
         integers.push_back(integers[i - 1] + delta);
 
         totalBitsRead += bitWight;

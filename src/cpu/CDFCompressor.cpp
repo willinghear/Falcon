@@ -6,6 +6,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include<bitset>
 #include "CDFCompressor.h"
 
 // Zigzag 编码，将带符号整数转为无符号整数
@@ -18,12 +19,13 @@ unsigned long CDFCompressor::zigzag_encode(long value)
 void CDFCompressor::flushBits(std::vector<unsigned char> &output, OutputBitStream &bitStream, int &totalBitsWritten)
 {
     bitStream.Flush();
-    size_t bufferSize = bitStream.GetBufferSize();
+    size_t bufferSize = (totalBitsWritten+7)/8;//bitStream.GetBufferSize();
     output.resize(bufferSize);
     Array<uint8_t> buffer = bitStream.GetBuffer(bufferSize);
-
+    std::cout << "\n 压缩的流uint_t \n"; // 打印为二进制
     for (size_t i = 0; i < buffer.length(); ++i)
     {
+        std::cout << std::bitset<8>(buffer[i]) << " "; // 打印为二进制
         output[i] = static_cast<unsigned char>(buffer[i]);
     }
 }
@@ -89,20 +91,26 @@ void CDFCompressor::compressBlock(const std::vector<long> &block, OutputBitStrea
     }
     //最大位数
     bitWight = std::ceil(log2(maxDelta));
-    std::cout << "最大元素：" << maxDelta<<std::endl;
+    std::cout << "最大元素：" << maxDelta<< "  最大2进制位数：" << bitWight<<std::endl;
 
-    totalBitsWritten += bitStream.Write(bitWight, 8);
+    totalBitsWritten += 8;
+    bitStream.Write(bitWight, 8);
     
     for (long delta : deltaList)
     {
         if(delta!=0)
         {
-            std::cout << "压缩元素：" << delta<<std::endl;
+            std::bitset<64> binary(delta);  // 假设最多支持64位的二进制显示
+            std::cout << "压缩元素：" << delta 
+                      << " 压缩后：" << binary.to_string().substr(64-bitWight) << std::endl;
 
         }
-        totalBitsWritten += bitStream.Write(delta, bitWight);
+        totalBitsWritten += bitWight;
+        bitStream.Write(delta, bitWight);
         //bitStream.Flush();  // 保证所有数据已写入
     }
+    bitStream.Flush();  // 保证所有数据已写入
+
 }
 
 void CDFCompressor::sampleBlock(const std::vector<double> &block, std::vector<long> &integers, int &maxDecimalPlaces)
@@ -143,7 +151,6 @@ void CDFCompressor::compress(const std::vector<double> &input, std::vector<unsig
         // 将最大小数位数写入输出数据的前几个字节
         bitStream.Write(static_cast<uint64_t>(overallMaxDecimalPlaces), 8); // 假设使用8位存储最大小数位数
         totalBitsWritten += 8;
-        std::cout << "最大位数：" << overallMaxDecimalPlaces<< std::endl;
         sampleBlock(block, integers, overallMaxDecimalPlaces); // 进行采样并获取整数值
         compressBlock(integers, bitStream, totalBitsWritten);  // 压缩块数据
     }

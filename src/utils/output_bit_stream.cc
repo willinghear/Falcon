@@ -1,5 +1,6 @@
 #include "output_bit_stream.h"
 # include<iostream>
+#include<bitset>
 //@初始化data_
 //缓冲区大小
 OutputBitStream::OutputBitStream(uint32_t buffer_size) {
@@ -12,6 +13,7 @@ OutputBitStream::OutputBitStream(uint32_t buffer_size) {
 //@写入
 //内容+长度
 uint32_t OutputBitStream::Write(uint64_t content, uint32_t len) {
+    //std::cout<<std::bitset<64>(content)<<" "<<std::bitset<32>(len);
     if (len > 64) {
         std::cerr << "Error: Attempt to write more than 64 bits." << std::endl;
         return 0; // 防止过写
@@ -38,6 +40,11 @@ uint32_t OutputBitStream::Write(uint64_t content, uint32_t len) {
         data_[cursor_++] = (buffer_ >> 32); // buffer高32位存入data_
         buffer_ <<= 32;                     // buffer左移
         bit_in_buffer_ -= 32;               // 更新长度
+        for(int i=0;i<cursor_;i++)
+        {
+            std::cout<<std::bitset<32>(data_[i])<<" ";
+        }
+        std::cout<<std::endl;
     }
     return len;
 }
@@ -90,13 +97,15 @@ Array<uint8_t> OutputBitStream::GetBuffer(uint32_t len) {
 //@存储并清空buffer
 //
 void OutputBitStream::Flush() {
-        if (bit_in_buffer_ > 0) {
-//         // 将缓冲区剩余位补充到32位
-//         buffer_ <<= (32 - bit_in_buffer_);
-        // 写入剩余位
-        data_[cursor_++] = buffer_; // 确保 cursor_ 不超出
-        buffer_ = 0; // 清空缓冲区
-        bit_in_buffer_ = 0; // 重置位数
+    if (bit_in_buffer_) {
+        data_[cursor_++] = buffer_ >> 32;
+        buffer_ = 0;
+        bit_in_buffer_ = 0;
+        for(int i=0;i<cursor_;i++)
+        {
+            std::cout<<data_[i]<<" ";
+        }
+        std::cout<<std::endl;
     }
 }
 //@清空刷新

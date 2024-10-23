@@ -181,7 +181,7 @@ CMakeFiles/test_cpu.dir/src/cpu/CDFCompressor.cpp.o: \
  /usr/include/c++/11/array /usr/include/c++/11/bits/uses_allocator.h \
  /usr/include/c++/11/bits/invoke.h \
  /usr/include/c++/11/bits/quoted_string.h /usr/include/c++/11/sstream \
- /usr/include/c++/11/bits/sstream.tcc \
+ /usr/include/c++/11/bits/sstream.tcc /usr/include/c++/11/bitset \
  /mnt/e/start/gpu/CUDA/cuCompressor/include/CDFCompressor.h \
  /usr/include/c++/11/vector /usr/include/c++/11/bits/stl_uninitialized.h \
  /usr/include/c++/11/bits/stl_vector.h \
