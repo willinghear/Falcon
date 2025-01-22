@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(cuCompressor-all)
+project(cuCompressor)
 
 # 设置 C++ 标准
 set(CMAKE_CXX_STANDARD 17)
@@ -30,10 +30,10 @@ set(SRC_CPU
 )
 
 set(SRC_GPU
-    src/gpu/GDFCompressor.cu
-    src/gpu/GDFDecompressor.cu
-    src/utils/output_bit_stream.cc
-    src/utils/input_bit_stream.cc
+        src/gpu/GDFCompressor.cu
+        src/gpu/GDFDecompressor.cu
+        src/utils/output_bit_stream.cc
+        src/utils/input_bit_stream.cc
 )
 
 # 添加测试模块
@@ -43,10 +43,3 @@ add_subdirectory(test)
 # 查找 GTest 和 Google Benchmark
 find_package(GTest REQUIRED)
 find_package(benchmark REQUIRED)
-
-
-
-
-
-
-

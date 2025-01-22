@@ -92,78 +92,102 @@ void CDFCompressor::compressBlock(const std::vector<double>& block, OutputBitStr
     }
 
 
-    std::vector<std::vector<uint8_t>> shuffledBlocks;
-    std::vector<long> countZeroByte(bitWeight, 0);
-    std::vector<std::vector<bool>> byteZeroFlag(bitWeight); // 用于存储每个字节是否为零字节的标志
-
-    for (int i = 0; i < bitWeight; i++)
-    {
-        uint8_t byteTemp;
-        std::vector<uint8_t> shuffledBit;
-        int mask = 1;
-        for (int j = 0; j < deltaList.size(); j += 8)
-        {
-            byteTemp = (((deltaList[j + 0]) >> i) << 7) |
-                (((deltaList[j + 1]) >> i) << 6) |
-                (((deltaList[j + 2]) >> i) << 5) |
-                (((deltaList[j + 3]) >> i) << 4) |
-                (((deltaList[j + 4]) >> i) << 3) |
-                (((deltaList[j + 5]) >> i) << 2) |
-                (((deltaList[j + 6]) >> i) << 1) |
-                (((deltaList[j + 7]) >> i) << 0);
-
-            shuffledBit.push_back(byteTemp);
-
-            // 判断字节是否为零字节
-            bool isZeroByte = (byteTemp != 0);
-            byteZeroFlag[i].push_back(isZeroByte);
-
-            if (isZeroByte) // 非零字节时，增加该位置的计数
-            {
-                countZeroByte[i]++;
-            }
-        }
-        shuffledBlocks.push_back(shuffledBit);
-    }
 
     // 稀疏列的判断：从 bitWeight 向下寻找稀疏性
-    std::vector<bool> isSparseColumn(bitWeight, false); // 用于记录每一列是否是稀疏列
-
+    int bestPoint = bitWeight;
     for (int i = bitWeight - 1; i >= 0; --i)
     {
-        // 判断当前列是否是稀疏列
-        if (currentBlockSize / 8 + countZeroByte[i] * 8 <= currentBlockSize)
+        if (currentBlockSize / 8 + bitCounts[i] * 8 >= currentBlockSize)
         {
-            isSparseColumn[i] = true; // 标记为稀疏列
+            break;
+        }
+        bestPoint = i;
+    }
+
+    // 1. 非稀疏列处理：从 0 到 bestPoint
+    int numNonSparseCols = bestPoint;
+    int nonSparseColSize = (currentBlockSize + 63) / 64; // 每列的大小（以 uint64_t 为单位）
+    int nonSparseSize = numNonSparseCols * nonSparseColSize;
+    std::vector<uint64_t> transposedNonSparse(nonSparseSize, 0);
+    for (int j = 0; j < bestPoint; ++j)
+    {
+        int baseIndex = j * nonSparseColSize;
+        for (int i = 0; i < currentBlockSize; ++i)
+        {
+            if (deltaList[i] & (1ULL << j))
+            {
+                transposedNonSparse[baseIndex + i / 64] |= (1ULL << (i % 64));
+            }
         }
     }
+
+    // 2. 稀疏列处理：从 bestPoint + 1 到 bitWeight - 1
+    int numSparseCols = bitWeight - bestPoint;
+    int sparseColSize = (currentBlockSize + 7) / 8; // 每列的大小（以字节为单位）
+    int sparseSize = numSparseCols * sparseColSize;
+    std::vector<uint8_t> sparseTransposed(sparseSize, 0);
+
+    // 计算 flag 数组的位数
+    int numFlagBits = sparseSize; // 每个字节对应一个标志位
+    int flagArraySize = (numFlagBits + 7) / 8; // 将位数转换为字节数
+    std::vector<uint8_t> flag(flagArraySize, 0);
+
+    // 稀疏列转置并标记非零字节
+    for (int j = bestPoint; j < bitWeight; ++j)
+    {
+        int colIndex = j - bestPoint;
+        int baseIndex = colIndex * sparseColSize;
+        for (int i = 0; i < currentBlockSize; ++i)
+        {
+            if (deltaList[i] & (1ULL << j))
+            {
+                sparseTransposed[baseIndex + i / 8] |= (1 << (i % 8));
+            }
+        }
+    }
+
+    int num1Value = 0;
+
+    // 判断稀疏矩阵中的每个字节是否为零，并设置 flag 中对应的位
+    for (int idx = 0; idx < sparseSize; ++idx)
+    {
+        if (sparseTransposed[idx] != 0)
+        {
+            num1Value++;
+            int byteIndex = idx / 8;
+            int bitIndex = idx % 8;
+            flag[byteIndex] |= (1 << bitIndex); // 设置 flag 中对应的位为 1，表示该字节为非零
+        }
+    }
+
+
     // 将 bit 位数写入输出
     // 将firstValue和位数写入输出
-    bitSize = 64 + 64 + 8 + 8 + 8;
+    bitSize = 64 + 64 + 8 + 8 + 8 + 8 + flagArraySize * 8 + num1Value * 8 + nonSparseSize * 64;
 
     bitStream.WriteLong(bitSize, 64);
     bitStream.WriteLong(firstValue, 64);
     bitStream.WriteInt(isOk, 8);
     bitStream.WriteInt(maxDecimalPlaces, 8);
     bitStream.WriteInt(bitWeight, 8);
+    bitStream.WriteInt(bestPoint, 8);
     // std::cout << "maxDecimalPlaces " <<maxDecimalPlaces<< std::endl;
-    for (int i = 0; i < bitWeight; i++)
+    for (int i = 0; i < flagArraySize; i++)
     {
-        bitSize += bitStream.WriteBit(isSparseColumn[i]);
-        if (isSparseColumn[i])
+        bitStream.WriteByte(flag[i]);
+
+    }
+    for (int i = 0; i < sparseTransposed.size(); i++)
+    {
+        if (sparseTransposed[i] != 0)
         {
-            for (int j = 0; j < byteZeroFlag[i].size(); j++)
-            {
-                bitSize += bitStream.WriteBit(byteZeroFlag[i][j]);
-                if (byteZeroFlag[i][j]) bitSize += bitStream.WriteByte(shuffledBlocks[i][j]);
-            }
-        }else
-        {
-            for (int j = 0; j < byteZeroFlag[i].size(); j++)
-            {
-                bitSize += bitStream.WriteByte(shuffledBlocks[i][j]);
-            }
+            bitStream.WriteByte(sparseTransposed[i]);
         }
+    }
+    for (int i = 0; i < nonSparseSize; i++)
+    {
+        bitStream.WriteLong(transposedNonSparse[i], 64);
+
     }
 }
 
@@ -176,11 +200,11 @@ void CDFCompressor::sampleBlock(const std::vector<double>& block, std::vector<lo
     int maxBeta = 0;
     for (double val : block)
     {
-        //计算起始位置sp
+//计算起始位置sp
         double log10v = log10(std::abs(val));
         int sp = floor(log10v);
         // 计算当前值的小数点后位数
-        int decimalPlaces = getDecimalPlaces(val, sp);
+        int decimalPlaces = getDecimalPlaces(val,sp);
 
         int beta = decimalPlaces + sp + 1;
 
@@ -232,14 +256,20 @@ int CDFCompressor::getDecimalPlaces(double value, int sp) //得到小数位数
     double trac = value + POW_NUM - POW_NUM;
     double temp = value;
     int digits = 0;
+    int64_t int_temp;
+    int64_t trac_temp;
+    std::memcpy(&int_temp, &temp, sizeof(double));
+    std::memcpy(&trac_temp, &trac, sizeof(double));
     double td;
     double deltaBound = std::abs(value) * pow(2, -52);
-    while (std::abs(temp - trac) >= deltaBound * td && digits < 16 - sp - 1)
+    while (std::abs(temp - trac) >=  deltaBound * td && digits < 16 - sp - 1)
     {
         digits++;
         td = pow(10, digits);
         temp = value * td;
+        std::memcpy(&int_temp, &temp, sizeof(double));
         trac = temp + POW_NUM - POW_NUM;
+        std::memcpy(&trac_temp, &trac, sizeof(double));
     }
     return digits;
 }

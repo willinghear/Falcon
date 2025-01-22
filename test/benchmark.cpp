@@ -1,4 +1,3 @@
-
 #include "alp.hpp"
 #include "data/dataset_utils.hpp"  // 包含 dataset_utils.hpp 来获取 get_dynamic_dataset
 #include "CDFDecompressor.h"
@@ -203,7 +202,7 @@ void BM_ColumnCompression(benchmark::State& state, const Column& column) {
 
 // 注册基准测试
 void RegisterCompressionBenchmarks() {
-    std::string dir_path = "/mnt/e/start/gpu/CUDA/cuCompressor/test/data/float";
+    std::string dir_path = "/home/lz/workspace/cuCompressor/test/data/float";
     for (const auto& entry : fs::directory_iterator(dir_path)) {
         if (entry.is_regular_file()) {
             std::string file_path = entry.path().string();

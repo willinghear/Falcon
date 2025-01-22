@@ -166,8 +166,8 @@ public:
                 encode_t += encode_end - encode_start;
                 decode_t += decode_end - decode_start;
                 
-                //std::cout << "Encoding Time: " << encode_duration.count() << " seconds." << std::endl;
-                //std::cout << "Decoding Time: " << decode_duration.count() << " seconds." << std::endl;
+                // std::cout << "Encoding Time: " << encode_duration.count() << " seconds." << std::endl;
+                // std::cout << "Decoding Time: " << decode_duration.count() << " seconds." << std::endl;
 
 
                 // Calculating compression ratio
@@ -225,8 +225,8 @@ public:
 
             total_processed += tuples_count;
         }
-        //std::cout << "Encoding Time: " << encode_t.count() << " seconds." << std::endl;
-        //std::cout << "Decoding Time: " << decode_t.count() << " seconds." << std::endl;
+        std::cout << "Encoding Time: " << encode_t.count() << " seconds." << std::endl;
+        std::cout << "Decoding Time: " << decode_t.count() << " seconds." << std::endl;
         ALP_compression_ratio =  compressed_size / original_size;
         std::cout << "ALP Compression Ratio: " << ALP_compression_ratio << std::endl;
 
@@ -237,7 +237,7 @@ public:
 
 // 测试函数
 TEST_F(alp_test, test_alp_double) {
-    auto dataset = get_dynamic_dataset("/mnt/e/start/gpu/CUDA/ALP_learn/tests/data/float");
+    auto dataset = get_dynamic_dataset("/home/lz/workspace/cuCompressor/test/data/float");
     ASSERT_FALSE(dataset.empty()) << "Dataset is empty, check data directory!";
 
     for (const auto& col : dataset) {
@@ -270,7 +270,7 @@ void test_compression(const std::string& file_path) {
     // 打印压缩率
     std::cout << "压缩率: " << compression_ratio << std::endl;
     ASSERT_EQ(decompressedData.size() , oriData.size()) << "解压失败，数据不一致。";
-    for(int i=0;i<oriData[i];i++)
+    for(int i=0;i<oriData.size();i++)
     {
         // 验证解压结果是否与原始数据一致
         // std::cout << std::fixed << std::setprecision(10)<<decompressedData[i]<<" "<<oriData[i]<<std::endl;
@@ -280,7 +280,7 @@ void test_compression(const std::string& file_path) {
 
 }
 TEST_F(alp_test,ratio){
-    std::string dir_path = "/mnt/e/start/gpu/CUDA/cuCompressor/test/data/float";//有毛病还没有数据集
+    std::string dir_path = "/home/lz/workspace/cuCompressor/test/data/float";//有毛病还没有数据集
     auto dataset = get_dynamic_dataset(dir_path);
     ASSERT_FALSE(dataset.empty()) << "Dataset is empty, check data directory!";
     int i=0;
@@ -293,6 +293,7 @@ TEST_F(alp_test,ratio){
             test_compression(file_path);
             ASSERT_NO_THROW(test_column<double>(dataset[i]));
             std::cout << "---------------------------------------------" << std::endl;
+            std::cout <<"ALP:CDF: "<< ALP_compression_ratio<<" : "<<compression_ratio<<std::endl;
             if(ALP_compression_ratio<compression_ratio)
             {
                 ans++;

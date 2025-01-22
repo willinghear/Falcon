@@ -38,5 +38,6 @@ std::vector<double> read_data(const std::string& file_path,bool a) {
             data.push_back(value);
         }
     }
+    std::cout <<"数据量"<< data.size() << std::endl;
     return data;
 }

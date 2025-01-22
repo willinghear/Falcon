@@ -21,7 +21,8 @@ namespace fs = std::filesystem;
 
 
 // 测试压缩和解压缩
-void test_compression(const std::string& file_path) {
+void test_compression(const std::string& file_path)
+{
     // 读取数据
     std::vector<double> oriData = read_data(file_path);
     //std::cout<<" ordata : "<<oriData[0]<<std::endl;
@@ -32,19 +33,19 @@ void test_compression(const std::string& file_path) {
     size_t nbEle = oriData.size();
 
     // 记录压缩时间
-    std::cout<<"压缩开始\n";
+    std::cout << "压缩开始\n";
     auto start_compress = std::chrono::high_resolution_clock::now();
     //进行压缩
     GDFCompressor GDFC;
-    GDFC.compress(oriData,cmpData);
+    GDFC.compress(oriData, cmpData);
     auto end_compress = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> compress_duration = end_compress - start_compress;
     // 打印压缩时间
     std::cout << "压缩时间: " << compress_duration.count() << " 秒" << std::endl;
-    
+
     // 解压缩相关变量
     std::vector<double> decompressedData;
-    
+
     // std::cout << "压缩后的数据内容: ";
     // for (const auto& byte : cmpData) {
     //     std::cout << std::hex << static_cast<int>(byte) << " "; // 打印为十六进制
@@ -53,12 +54,12 @@ void test_compression(const std::string& file_path) {
     // std::cout << std::endl;
     // }
     // 记录解压时间
-    std::cout<<"解压开始\n";
+    std::cout << "解压开始\n";
     auto start_decompress = std::chrono::high_resolution_clock::now();
 
     //进行解压
     GDFDecompressor GDFD;
-    GDFD.decompress(cmpData,decompressedData);
+    GDFD.decompress(cmpData, decompressedData);
     auto end_decompress = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> decompress_duration = end_decompress - start_decompress;
 
@@ -68,24 +69,30 @@ void test_compression(const std::string& file_path) {
     // 计算压缩率
     size_t original_size = oriData.size() * sizeof(double);
     size_t compressed_size = cmpData.size() * sizeof(unsigned char);
-    double compression_ratio = compressed_size/ static_cast<double>(original_size);
+    double compression_ratio = compressed_size / static_cast<double>(original_size);
 
     // 打印压缩率
     std::cout << "压缩率: " << compression_ratio << std::endl;
-    ASSERT_EQ(decompressedData.size() , oriData.size()) << "解压失败，数据不一致。";
-    for(int i=0;i<oriData[i];i++)
+    ASSERT_EQ(decompressedData.size(), oriData.size()) << "解压失败，数据不一致。";
+    for (int i = 0; i < oriData.size(); i++)
     {
         // 验证解压结果是否与原始数据一致
-        // std::cout << std::fixed << std::setprecision(10)<<decompressedData[i]<<" "<<oriData[i]<<std::endl;
-        ASSERT_EQ(decompressedData[i] , oriData[i]) <<i<< "解压失败，数据不一致。";
-
+        if (decompressedData[i] != oriData[i])
+        {
+            std::cout << std::fixed << std::setprecision(17) << decompressedData[i - 2] << " " << oriData[i - 2] <<
+                std::endl;
+            std::cout << std::fixed << std::setprecision(17) << decompressedData[i - 1] << " " << oriData[i - 1] <<
+                std::endl;
+            std::cout << std::fixed << std::setprecision(17) << decompressedData[i] << " " << oriData[i] << std::endl;
+        }
+        ASSERT_EQ(decompressedData[i], oriData[i]) << i << "解压失败，数据不一致。";
     }
-
 }
 
 
 // 测试压缩
-void test_compression0(const std::string& file_path) {
+void test_compression0(const std::string& file_path)
+{
     // 读取数据
     std::vector<double> oriData = read_data(file_path);
     std::vector<unsigned char> cmpData1;
@@ -95,11 +102,11 @@ void test_compression0(const std::string& file_path) {
     size_t nbEle = oriData.size();
 
     // 记录压缩时间
-    std::cout<<"CPU压缩开始\n";
+    std::cout << "CPU压缩开始\n";
     auto start_compress = std::chrono::high_resolution_clock::now();
     //进行压缩
     CDFCompressor CDFC;
-    CDFC.compress(oriData,cmpData1);
+    CDFC.compress(oriData, cmpData1);
 
     auto end_compress = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> compress_duration = end_compress - start_compress;
@@ -108,10 +115,10 @@ void test_compression0(const std::string& file_path) {
 
 
     // 记录压缩时间
-    std::cout<<"GPU压缩开始\n";
+    std::cout << "GPU压缩开始\n";
     start_compress = std::chrono::high_resolution_clock::now();
     GDFCompressor GDFC;
-    GDFC.compress(oriData,cmpData2);
+    GDFC.compress(oriData, cmpData2);
     end_compress = std::chrono::high_resolution_clock::now();
     compress_duration = end_compress - start_compress;
 
@@ -120,28 +127,35 @@ void test_compression0(const std::string& file_path) {
 
 
     // 比较压缩后的数据
-    try {
+    try
+    {
         ASSERT_EQ(cmpData1.size(), cmpData2.size()) << "压缩后数据的大小不一致。";
 
-        for (size_t i = 0; i < cmpData1.size(); ++i) {
-            if (cmpData1[i] != cmpData2[i]) {
-                std::cerr << "数据不一致，位置: " << i << ", CPU 数据: " 
-                          << static_cast<int>(cmpData1[i]) 
-                          << ", GPU 数据: " 
-                          << static_cast<int>(cmpData2[i]) << std::endl;
+        for (size_t i = 0; i < cmpData1.size(); ++i)
+        {
+            if (cmpData1[i] != cmpData2[i])
+            {
+                std::cerr << "数据不一致，位置: " << i << ", CPU 数据: "
+                    << static_cast<int>(cmpData1[i])
+                    << ", GPU 数据: "
+                    << static_cast<int>(cmpData2[i]) << std::endl;
             }
         }
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception& e)
+    {
         std::cerr << "断言失败: " << e.what() << std::endl;
     }
-    
 }
 
 // Google Test 测试用例
-TEST(CDFCompressorTest, CompressionDecompression) {
-    std::string dir_path = "/mnt/e/start/gpu/CUDA/cuCompressor/test/data/float";//有毛病还没有数据集
-    for (const auto& entry : fs::directory_iterator(dir_path)) {
-        if (entry.is_regular_file()) {
+TEST(CDFCompressorTest, CompressionDecompression)
+{
+    std::string dir_path = "/home/lz/workspace/cuCompressor/test/data/wrong"; //有毛病还没有数据集
+    for (const auto& entry : fs::directory_iterator(dir_path))
+    {
+        if (entry.is_regular_file())
+        {
             std::string file_path = entry.path().string();
             std::cout << "正在处理文件: " << file_path << std::endl;
             test_compression(file_path);
@@ -150,7 +164,7 @@ TEST(CDFCompressorTest, CompressionDecompression) {
     }
 }
 
-void comp(std::vector<double> oriData,std::vector<double> &decompData)
+void comp(std::vector<double> oriData, std::vector<double>& decompData)
 {
     std::vector<unsigned char> cmpData1;
     std::vector<unsigned char> cmpData2;
@@ -159,11 +173,11 @@ void comp(std::vector<double> oriData,std::vector<double> &decompData)
     size_t nbEle = oriData.size();
 
     // 记录压缩时间
-    std::cout<<"CPU压缩开始\n";
+    std::cout << "CPU压缩开始\n";
     auto start_compress = std::chrono::high_resolution_clock::now();
     //进行压缩
     CDFCompressor CDFC;
-    CDFC.compress(oriData,cmpData1);
+    CDFC.compress(oriData, cmpData1);
 
     auto end_compress = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> compress_duration = end_compress - start_compress;
@@ -172,10 +186,10 @@ void comp(std::vector<double> oriData,std::vector<double> &decompData)
 
 
     // 记录压缩时间
-    std::cout<<"GPU压缩开始\n";
+    std::cout << "GPU压缩开始\n";
     start_compress = std::chrono::high_resolution_clock::now();
     GDFCompressor GDFC;
-    GDFC.compress(oriData,cmpData2);
+    GDFC.compress(oriData, cmpData2);
     end_compress = std::chrono::high_resolution_clock::now();
     compress_duration = end_compress - start_compress;
 
@@ -190,57 +204,76 @@ void comp(std::vector<double> oriData,std::vector<double> &decompData)
     // 打印压缩数据
     // std::cout << "\nCPU压缩结果:\n";
     // for (size_t i = 0; i < cmpData1.size(); ++i) {
-    //     std::cout << std::setw(2) << std::setfill('0') << std::hex 
+    //     std::cout << std::setw(2) << std::setfill('0') << std::hex
     //               << static_cast<int>(cmpData1[i]) << " ";
     //     if ((i + 1) % 16 == 0) std::cout << "\n"; // 每 16 字节换行
     // }
     // std::cout << std::endl;
 
     std::cout << "\nGPU压缩结果:\n";
-    for (size_t i = 0; i < cmpData2.size(); ++i) {
-        std::cout << std::setw(2) << std::setfill('0') << std::hex 
-                  << static_cast<int>(cmpData2[i]) << " ";
+    for (size_t i = 0; i < cmpData2.size(); ++i)
+    {
+        std::cout << std::setw(2) << std::setfill('0') << std::hex
+            << static_cast<int>(cmpData2[i]) << " ";
         if ((i + 1) % 16 == 0) std::cout << "\n"; // 每 16 字节换行
     }
     std::cout << std::endl;
-    try {
-        ASSERT_EQ(oriData,decompData) << "压缩后数据的大小不一致。";
-    } catch (const std::exception& e) {
+    try
+    {
+        ASSERT_EQ(oriData, decompData) << "压缩后数据的大小不一致。";
+    }
+    catch (const std::exception& e)
+    {
         std::cerr << "断言失败: " << e.what() << std::endl;
     }
 }
 
 // 测试压缩
-TEST(GDFCompressorTest0, CompressionDecompression) {
+TEST(GDFCompressorTest0, CompressionDecompression)
+{
     // 读取数据
-    std::vector<double> oriData = {0.1,0.2,0.3,0.4,0.5};
+    std::vector<double> oriData = {35.922998954192586,
+        35.971220331850034,
+        36.01483460486757,
+        36.039070062162985,
+        36.070883827972324,
+        36.07456252900196};
     std::vector<double> newData;
-    comp(oriData,newData);
-    for(auto n:newData)
+    comp(oriData, newData);
+    for (auto n : newData)
     {
-        printf("%f,",n);
+        printf("%f,", n);
     }
 }
-TEST(GDFCompressorTest1, CompressionDecompression) {
+
+TEST(GDFCompressorTest1, CompressionDecompression)
+{
     // 读取数据
-    std::vector<double> oriData = {0.1,0.2,0.3,0.4,0.5,0.1,0.4,0.2,0.4,0.1,0.015,0.23};
+    std::vector<double> oriData = {
+        35.922998954192586,
+        35.971220331850034,
+        36.01483460486757,
+        36.039070062162985,
+        36.070883827972324,
+        36.07456252900196
+    };
     std::vector<double> newData;
-    comp(oriData,newData);
-    for(auto n:newData)
+    comp(oriData, newData);
+    for (auto n : newData)
     {
-        printf("%f,",n);
+        printf("%f,", n);
     }
     printf("\n");
 }
 
-std::vector<uint8_t> ConvertArrayToVector(const Array<uint8_t>& arr) {
+std::vector<uint8_t> ConvertArrayToVector(const Array<uint8_t>& arr)
+{
     return std::vector<uint8_t>(arr.begin(), arr.end());
 }
 
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
-
-
