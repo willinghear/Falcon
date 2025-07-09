@@ -1,4 +1,4 @@
-#include <cstdint>
+ #include <cstdint>
 #include <assert.h>
 #include <math.h>
 #include <sys/types.h>
@@ -207,7 +207,7 @@ class ElfStarCompressor {
     int* betaStarList;
     uint64_t* vPrimeList;
     Array<int> leadDistribution = Array<int>(64);
-    Array<int> trailDistribution = Array<int>(64);
+    A  rray<int> trailDistribution = Array<int>(64);
 
    protected:
     int writeInt(int n, int len){
