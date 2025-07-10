@@ -106,17 +106,8 @@ __global__ void elf_star_compress_kernel(double *d_in, uint8_t *d_out_chunks, in
     // initBitWriter(&writer, my_out_buffer,MAX_CHUNK_BYTES);
 
     uint8_t* chunk_base_ptr = d_out_chunks + (size_t)chunk_idx * MAX_CHUNK_BYTES;
-
-    // 2. 计算实际写入比特流的起始地址。
-    //    这个地址是基地址向后偏移4个字节。
-    uint8_t* bitstream_start_ptr = chunk_base_ptr + 4;
-
-    // 3. 将这个新的起始地址转换为 BitWriter 需要的 uint32_t* 类型
-    uint32_t* my_out_buffer_for_writing = reinterpret_cast<uint32_t*>(bitstream_start_ptr);
-
-    // 4. 初始化 BitWriter，让它从新的起始地址开始写入。
-    //    注意：容量也应该相应地减少4字节。
-    initBitWriter(&writer, my_out_buffer_for_writing, MAX_CHUNK_BYTES - 4);
+    uint32_t *my_out_buffer = reinterpret_cast<uint32_t *>(chunk_base_ptr);\
+    initBitWriter(&writer, my_out_buffer,MAX_CHUNK_BYTES);
 
 
     // 计算positions
@@ -224,6 +215,5 @@ __global__ void elf_star_compress_kernel(double *d_in, uint8_t *d_out_chunks, in
     }
     total_bits_size += flush(&writer);
     uint32_t final_byte_size = (total_bits_size + 7) / 8;
-
-    *((uint32_t*)chunk_base_ptr) = final_byte_size;
+    d_chunk_sizes[chunk_idx] = final_byte_size;
 }

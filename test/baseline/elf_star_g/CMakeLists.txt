@@ -13,14 +13,24 @@ set(CMAKE_BUILD_PARALLEL_LEVEL 4)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-file(GLOB_RECURSE LIB_SRC *.cpp *.c *.cc *.cu)
-
-add_library(elf_star_g SHARED ${LIB_SRC}
+set(ELF_STAR_SOURCES
+        ElfStarComHost.cu
+        ElfStarComKernel.cu
         utils.cu
-        defs.cuh
-        BitStream/BitDefine.cuh
-        BitStream/BitWriter.cuh
-        BitStream/BitReader.cuh
         utils/post_office_solver.cu
-        utils/post_office_solver.cuh
+        # 如果你有其他的 .cpp 文件，也在这里添加
 )
+
+add_library(elf_star_g SHARED ${ELF_STAR_SOURCES})
+
+# --- 最佳实践：使用 target_include_directories ---
+# 这会告诉 'elf_star_g' 这个目标去哪里寻找它需要的头文件。
+target_include_directories(elf_star_g PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/BitStream
+        ${CMAKE_CURRENT_SOURCE_DIR}/utils
+)
+
+# --- 最佳实践：链接必要的库 ---
+# 将CUDA运行时库链接到你的目标
+target_link_libraries(elf_star_g PRIVATE CUDA::cudart)
