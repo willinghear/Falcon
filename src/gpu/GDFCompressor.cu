@@ -300,7 +300,7 @@ __global__ void compressBlockKernel(
 
                     lorenQuant = currQuant - prevQuant;
 
-                    deltas[ quant_chunk_idx] = zigzag_encode_cuda(lorenQuant);
+                    deltas[quant_chunk_idx] = zigzag_encode_cuda(lorenQuant);
                     prevQuant = currQuant;
                     maxDelta = device_max_uint64(maxDelta, deltas[quant_chunk_idx]);
                 }

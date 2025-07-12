@@ -2,7 +2,7 @@
 // Created by lizhzz on 25-7-10.
 //
 
-#include "ElfStarComHost.cuh"
+#include "Elf_Star_g_Kernel.cuh"
 
 #include <cstdint>
 #include <iostream>
@@ -25,9 +25,12 @@ exit(EXIT_FAILURE); \
 } \
 } while (0)
 
-ssize_t elf_star_encode(double *in, ssize_t len, uint8_t **out) {
+ssize_t elf_star_encode(double *in, ssize_t len, uint8_t **out, int64_t **out_compressed_lengths,
+    int64_t **out_compressed_offsets, int64_t **out_decompressed_offsets, int *out_num_blocks) {
     if (len <= 0) {
         *out = nullptr;
+        *out_compressed_lengths = nullptr;
+        *out_compressed_offsets = nullptr;
         return 0;
     }
 
@@ -36,6 +39,7 @@ ssize_t elf_star_encode(double *in, ssize_t len, uint8_t **out) {
     int *d_chunk_sizes;
 
     int num_chunks = (len + CHUNK_SIZE - 1) / CHUNK_SIZE;
+    *out_num_blocks = num_chunks;
 
     cudaMalloc(&d_in, len * sizeof(double));
     cudaMalloc(&d_out_chunks, num_chunks * MAX_CHUNK_BYTES);
@@ -49,6 +53,9 @@ ssize_t elf_star_encode(double *in, ssize_t len, uint8_t **out) {
     std::cout << "Launching " << num_chunks << " CUDA blocks..." << std::endl;
 
     elf_star_compress_kernel<<<gridDim,blockDim>>>(d_in, d_out_chunks, d_chunk_sizes, len);
+    cudaDeviceSynchronize();
+
+
     //
     // // 计算前缀和
     // int* d_chunk_offsets; // 存储每个块的起始偏移
@@ -95,18 +102,18 @@ ssize_t elf_star_encode(double *in, ssize_t len, uint8_t **out) {
     // }
 
 
-    std::vector<int> h_chunk_sizes(num_chunks);
-    std::vector<uint8_t> h_out_chunks((size_t)num_chunks * MAX_CHUNK_BYTES);
-
-    cudaDeviceSynchronize();
-
+    //std::vector<int> h_chunk_sizes(num_chunks);
+    int* h_chunk_sizes = (int*)malloc(num_chunks * sizeof(int));
+    if (!h_chunk_sizes) return -1; // 内存分配失败
+    //std::vector<uint8_t> h_out_chunks((size_t)num_chunks * MAX_CHUNK_BYTES);
+    uint8_t* h_out_chunks = (uint8_t*)malloc((size_t)num_chunks * MAX_CHUNK_BYTES);
     std::cout << "GPU compression finished." << std::endl;
 
     // 复制每个块的压缩后大小
-    CUDA_CHECK(cudaMemcpy(h_chunk_sizes.data(), d_chunk_sizes, num_chunks * sizeof(int), cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpy(h_chunk_sizes, d_chunk_sizes, num_chunks * sizeof(int), cudaMemcpyDeviceToHost));
 
     // 复制所有压缩数据块
-    CUDA_CHECK(cudaMemcpy(h_out_chunks.data(), d_out_chunks, (size_t)num_chunks * MAX_CHUNK_BYTES, cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpy(h_out_chunks, d_out_chunks, (size_t)num_chunks * MAX_CHUNK_BYTES, cudaMemcpyDeviceToHost));
 
 
     std::cout << "Assembling final compressed data on host..." << std::endl;
@@ -118,21 +125,35 @@ ssize_t elf_star_encode(double *in, ssize_t len, uint8_t **out) {
     }
 
 
+
     // 分配最终的、连续的输出缓冲区
     *out = (uint8_t*)malloc(total_compressed_size);
-    if (total_compressed_size > 0 && *out == nullptr) {
-        fprintf(stderr, "Error: Failed to allocate memory for final output.\n");
-        // 清理GPU内存
-        cudaFree(d_in);
-        cudaFree(d_out_chunks);
-        cudaFree(d_chunk_sizes);
-        return -1; // 表示错误
+    *out_compressed_lengths = (int64_t*)malloc(num_chunks * sizeof(int64_t));
+    *out_compressed_offsets = (int64_t*)malloc(num_chunks * sizeof(int64_t));
+    *out_decompressed_offsets = (int64_t*)malloc(num_chunks * sizeof(int64_t));
+
+
+    // 检查所有内存分配是否成功
+    if ((total_compressed_size > 0 && !*out) || !*out_compressed_lengths || !*out_compressed_offsets || !*out_decompressed_offsets) {
+        // 清理已分配的内存，防止泄漏
+        free(*out); *out = nullptr;
+        free(*out_compressed_lengths); *out_compressed_lengths = nullptr;
+        free(*out_compressed_offsets); *out_compressed_offsets = nullptr;
+        free(*out_decompressed_offsets); *out_decompressed_offsets = nullptr;
+        free(h_chunk_sizes);
+        cudaFree(d_in); cudaFree(d_out_chunks); cudaFree(d_chunk_sizes_gpu);
+        return -1; // 返回错误
     }
 
     // 将各个有效的压缩块拼接到最终输出缓冲区
     uint8_t* current_pos = *out;
+
+    size_t current_compressed_offset = 0;
     for (int i = 0; i < num_chunks; ++i) {
         int chunk_size = h_chunk_sizes[i];
+        (*out_compressed_lengths)[i] = (int64_t)chunk_size;
+        (*out_compressed_offsets)[i] = (int64_t)current_compressed_offset;
+        (*out_decompressed_offsets)[i] = (int64_t)i * CHUNK_SIZE;
         if (chunk_size > 0) {
             // 源地址：指向第i个块的起始位置
             uint8_t* chunk_start = h_out_chunks.data() + (size_t)i * MAX_CHUNK_BYTES;
@@ -141,6 +162,7 @@ ssize_t elf_star_encode(double *in, ssize_t len, uint8_t **out) {
             // 移动目标指针
             current_pos += chunk_size;
         }
+        current_compressed_offset += chunk_size;
     }
 
     // ===================================================================
@@ -154,43 +176,4 @@ ssize_t elf_star_encode(double *in, ssize_t len, uint8_t **out) {
               << " bytes, Compressed size: " << total_compressed_size << " bytes." << std::endl;
 
     return total_compressed_size;
-}
-
-
-int main() {
-    // 1. 准备测试数据
-    const ssize_t data_len = 5000; // 测试用例大小
-    std::vector<double> host_data(data_len);
-
-    // 生成一些有规律的、可压缩的数据
-    for (ssize_t i = 0; i < data_len; ++i) {
-        host_data[i] = 1.2345678e10 + (double)(i % 100);
-    }
-
-    // 2. 调用压缩函数
-    uint8_t* compressed_data = nullptr;
-    ssize_t compressed_size = elf_star_encode(host_data.data(), data_len, &compressed_data);
-
-    if (compressed_size >= 0) {
-        std::cout << "Final compressed size: " << compressed_size << " bytes." << std::endl;
-        double ratio = (double)compressed_size / (data_len * sizeof(double));
-        std::cout << "Compression ratio: " << ratio << std::endl;
-
-        // 在这里可以使用 compressed_data，例如写入文件
-        // FILE *fp = fopen("compressed.bin", "wb");
-        // if(fp) {
-        //     fwrite(compressed_data, 1, compressed_size, fp);
-        //     fclose(fp);
-        // }
-
-    } else {
-        std::cerr << "Compression failed." << std::endl;
-    }
-
-    // 3. 清理压缩后分配的内存
-    if (compressed_data != nullptr) {
-        free(compressed_data);
-    }
-
-    return 0;
 }

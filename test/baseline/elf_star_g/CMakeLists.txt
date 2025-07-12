@@ -18,10 +18,16 @@ set(ELF_STAR_SOURCES
         ElfStarComKernel.cu
         utils.cu
         utils/post_office_solver.cu
+        ElfStarDecKernel.cu
+        ElfStarDecHost.cu
+        ElfStarDecHost.cuh
+        Elf_Star_g_Kernel.cuh
         # 如果你有其他的 .cpp 文件，也在这里添加
 )
 
-add_library(elf_star_g SHARED ${ELF_STAR_SOURCES})
+add_library(elf_star_g SHARED ${ELF_STAR_SOURCES}
+        ElfStarDecKernel.cu
+)
 
 # --- 最佳实践：使用 target_include_directories ---
 # 这会告诉 'elf_star_g' 这个目标去哪里寻找它需要的头文件。

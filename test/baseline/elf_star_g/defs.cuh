@@ -22,9 +22,9 @@ union FLOAT {
 __device__ int getFAlpha(int alpha);
 __device__ void getAlphaAndBetaStar(double v, int lastBetaStar, int result[2]);
 
-double roundUp(double v, int alpha);
-double get10iN(int i);
-int getSP(double v);
+__device__ double roundUp(double v, int alpha);
+__device__ double get10iN(int i);
+__device__ int getSP(double v);
 
 __device__ int getSignificantCount(double v, int sp, int lastBetaStar)
 

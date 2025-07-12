@@ -105,7 +105,7 @@ __global__ void elf_star_compress_kernel(double *d_in, uint8_t *d_out_chunks, in
     // uint32_t *my_out_buffer = reinterpret_cast<uint32_t *>(d_out_chunks + chunk_idx * MAX_CHUNK_BYTES);
     // initBitWriter(&writer, my_out_buffer,MAX_CHUNK_BYTES);
 
-    uint8_t* chunk_base_ptr = d_out_chunks + (size_t)chunk_idx * MAX_CHUNK_BYTES;
+    uint8_t *chunk_base_ptr = d_out_chunks + (size_t) chunk_idx * MAX_CHUNK_BYTES;
     uint32_t *my_out_buffer = reinterpret_cast<uint32_t *>(chunk_base_ptr);\
     initBitWriter(&writer, my_out_buffer,MAX_CHUNK_BYTES);
 

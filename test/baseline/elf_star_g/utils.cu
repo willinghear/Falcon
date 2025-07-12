@@ -9,6 +9,7 @@
 #define MAP_SP_GREATER_1_SIZE 10
 #define MAP_SP_LESS_1_SIZE 11
 #define MAP_10_I_P_SIZE 21
+#define MAP_10_I_N_SIZE 21
 
 __device__ __constant__ int f[] = {0, 4, 7, 10, 14, 17, 20, 24, 27, 30, 34, 37, 40, 44, 47, 50, 54, 57, 60, 64, 67};
 
@@ -23,6 +24,10 @@ __device__ __constant__ long mapSPGreater1[] = {
 __device__ __constant__ double mapSPLess1[] = {
     1, 0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001, 0.0000001, 0.00000001, 0.000000001, 0.0000000001
 };
+
+__device__ __constant__ double map10iN[] = {1.0, 1.0E-1, 1.0E-2, 1.0E-3, 1.0E-4, 1.0E-5, 1.0E-6, 1.0E-7, 1.0E-8, 1.0E-9,
+                                 1.0E-10, 1.0E-11, 1.0E-12, 1.0E-13, 1.0E-14, 1.0E-15, 1.0E-16, 1.0E-17, 1.0E-18,
+                                 1.0E-19, 1.0E-20};
 
 
 __device__ void getAlphaAndBetaStar(double v, int lastBetaStar, int alphaAndBetaStar[2]) {
@@ -123,4 +128,42 @@ __device__ void getSPAnd10iNFlag(double v, int result_sp_flag[2]) {
     double log10v = log10(v);
     result_sp_flag[0] = (int) floor(log10v);
     result_sp_flag[1] = log10v == (long) log10v ? 1 : 0;
+}
+
+__device__ int getSP(double v) {
+    if (v >= 1) {
+        int i = 0;
+        while (i < MAP_SP_GREATER_1_SIZE - 1) {
+            if (v < mapSPGreater1[i + 1]) {
+                return i;
+            }
+            i++;
+        }
+    } else {
+        int i = 1;
+        while (i < MAP_SP_LESS_1_SIZE) {
+            if (v >= mapSPLess1[i]) {
+                return -i;
+            }
+            i++;
+        }
+    }
+    return (int) floor(log10(v));
+}
+
+__device__ double get10iN(int i) {
+    if (i >= MAP_10_I_N_SIZE) {
+        return pow(10, -i);
+    } else {
+        return map10iN[i];
+    }
+}
+
+__device__ double roundUp(double v, int alpha) {
+    double scale = get10iP(alpha);
+    if (v < 0) {
+        return floor(v * scale) / scale;
+    } else {
+        return ceil(v * scale) / scale;
+    }
 }

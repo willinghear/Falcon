@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cassert>
 
-#include "BitDefine.h"
+#include "BitDefine.cuh"
 
 typedef struct {
   uint32_t *data;
@@ -17,26 +17,25 @@ typedef struct {
 #endif
 } BitReader;
 
-static inline void
+__device__ __forceinline__ void
 initBitReader(BitReader *reader, uint32_t *input, size_t len) {
-  assert(len >= 1);
   reader->data = (uint32_t *) input;
   reader->buffer = ((uint64_t) input[0]) << 32;
   reader->cursor = 1;
-  reader->bitcnt = 32;
+  reader->bitcnt = 32;c
   reader->len = len;
 #ifdef DEBUG
   reader->ptr = 0;
 #endif
 }
 
-static inline uint64_t
+__device__ __forceinline__ uint64_t
 peek(BitReader *reader, size_t len) {
   assert(len <= 32);
   return reader->buffer >> 64 - len;
 }
 
-static inline void
+__device__ __forceinline__ void
 forward(BitReader *reader, size_t len) {
   assert(len <= 32);
   reader->bitcnt -= len;
@@ -56,7 +55,7 @@ forward(BitReader *reader, size_t len) {
 #endif
 }
 
-static inline uint64_t
+__device__ __forceinline__ uint64_t
 readLong(BitReader *reader, size_t len) {
   if (len == 0) return 0;
   uint64_t result = 0;
@@ -71,7 +70,7 @@ readLong(BitReader *reader, size_t len) {
   return result;
 }
 
-static inline uint32_t
+__device__ __forceinline__ uint32_t
 readInt(BitReader *reader, size_t len) {
   if (len == 0) return 0;
   uint32_t result = 0;
